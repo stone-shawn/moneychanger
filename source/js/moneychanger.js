@@ -40,7 +40,7 @@ var MoneyChanger = (function($) {
          * The currrecy types that current source supported
          * Array 
          */
-        this.types = [];
+        this.types = null;
         this.requestUrl = '';
         
         this.setTypes = function(types) {
@@ -61,13 +61,11 @@ var MoneyChanger = (function($) {
                 url: url,
                 dataType: dataType,
                 data: data,
-
+                crossDomain: true,
                 beforeSend: function() {
                     console.log('before send...');
                 },
-
                 success: handler,
-
                 error: function(jqXhr, textStatus, errorThrown) {
                     if(textStatus) {
                         // "timeout", "error", "abort", and "parsererror"
@@ -75,7 +73,6 @@ var MoneyChanger = (function($) {
                         console.log(errorThrown);
                     }
                 },
-
                 complete: function() {
                     console.log('complete...');
                 }
@@ -95,33 +92,23 @@ var MoneyChanger = (function($) {
         };
 
         this.setSupportedTypes = function() {
-            
-            /*
-              Just want to get from remote before, but some wrong with chrome when request this url.
-
-            var url = 'http://www.freecurrencyconverterapi.com/api/v2/currencies';
-            var handler = function(result) {
-                // console.log(results);
-            };
-            this.request('GET', url, null, 'json', handler);
-            */
-            var types = ['BBD', 'BND', 'HUF', 'JMD', 'FKP', 'MKD', 'NZD', 'WST', 'BTN', 'CUC', 'ALL',
-            'GIP', 'AUD', 'PGK', 'AMD', 'CVE', 'TZS', 'BAM', 'LYD', 'RWF', 'SEK', 'OMR', 'RSD', 'LAK', 
-            'BSD', 'CNY', 'CRC', 'GEL', 'ERN', 'INR', 'LTL', 'ANG', 'SYP', 'BWP', 'DKK', 'GTQ', 'KWD', 
-            'MNT', 'CZK', 'KRW', 'PEN', 'SOS', 'BHD', 'COP', 'HTG', 'LBP', 'MZM', 'QAR', 'BZD', 'KZT', 
-            'MUR', 'JOD', 'MRO', 'SLL', 'AWG', 'KYD', 'EEK', 'IDR', 'MWK', 'EUR', 'XPF', 'IRR', 'ILS', 
-            'MYR', 'NGN', 'STD', 'AOA', 'BIF', 'HNL', 'LSL', 'MMK', 'PAB', 'PHP', 'ZAR', 'SAR', 'SGD', 
-            'RON', 'SRD', 'TWD', 'TOP', 'ARS', 'AZN', 'BYR', 'VEB', 'DZD', 'BGN', 'BOB', 'CAD', 'CLP', 
-            'CDF', 'DOP', 'GQE', 'FJD', 'GMD', 'GYD', 'ISK', 'JPY', 'IQD', 'KPW', 'LVL', 'CHF', 'MGA', 
-            'MDL', 'MAD', 'NPR', 'NIO', 'PKR', 'PYG', 'SHP', 'SCR', 'SBD', 'LKR', 'TRY', 'THB', 'AED', 
-            'VUV', 'YER', 'BDT', 'AFN', 'HRK', 'ETB', 'KMF', 'BRL', 'MVR', 'NOK', 'TTD', 'KHR', 'EGP', 
-            'HKD', 'LRD', 'NAD', 'RUB', 'SZL', 'DJF', 'GNF', 'KGS', 'PLN', 'UYU', 'VND', 'GHS', 'KES', 
-            'MXN', 'SKK', 'UGX', 'UZS', 'ZMK', 'XDR', 'MOP', 'TJS', 'TND', 'TMM', 'UAH', 'GBP', 'XOF', 
-            'XAF', 'USD', 'XCD', 'SDG'];
             This.setTypes(types);
         };
     };
 
+    var YahooRateQueryer = function() {
+        RateQueryer.call(this);
+        var This = this;
+        this.makeRequestUrl = function(myType, targetType) {
+            return 'http://www.freecurrencyconverterapi.com/api/v2/convert?q=' + myType + '_' + targetType + '&compact=y';
+        };
+
+        this.setSupportedTypes = function() {
+            var types = currenies;
+            console.log(types);
+            This.setTypes(types);
+        };
+    }
 
     /**
      * The Currency constractor for currency object
@@ -195,6 +182,9 @@ var MoneyChanger = (function($) {
                 case 'freecurrencyconverterapi.com': 
                 return new FreeCCRateQueryer;
                 break;
+                case 'yahoo': 
+                return new YahooRateQueryer;
+                break;
                 default: 
                     throw new Error('Invalid remote query source:' + config['remoteSource']);
             }
@@ -206,8 +196,8 @@ var MoneyChanger = (function($) {
         setCurrency: function(currencyId, type, amount) {
             var currencyOptions = '';
             var type = type || '';
-            for(var i = 0; i < this.rateQueryer.types.length; i++) {
-                currencyOptions += '<option' + (type == this.rateQueryer.types[i] ? ' selected':'') + ' value="' + this.rateQueryer.types[i] + '">' + this.rateQueryer.types[i] + '</option>' + "\n";
+            for(var currency in this.rateQueryer.types) {
+                currencyOptions += '<option' + (type == currency ? ' selected':'') + ' value="' + currency + '">' + currency + '(' + this.rateQueryer.types[currency] + ')</option>' + "\n";
             }
             var area = $('#' + currencyId);
             area.find('select').html(currencyOptions);
